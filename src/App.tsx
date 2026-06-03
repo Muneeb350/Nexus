@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { MeetingsProvider } from './context/MeetingsContext';
+import { WalletProvider } from './context/WalletContext';
 
 // Layouts
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -30,6 +31,7 @@ import { DealsPage } from './pages/deals/DealsPage';
 import { MeetingsPage } from './pages/meetings/MeetingsPage';
 import { VideoCallPage } from './pages/video-call/VideoCallPage';
 import { DocumentChamberPage } from './pages/documents/DocumentChamberPage';
+import { PaymentsPage } from './pages/payments/PaymentsPage';
 
 // Chat Pages
 import { ChatPage } from './pages/chat/ChatPage';
@@ -38,6 +40,7 @@ function App() {
   return (
     <AuthProvider>
       <MeetingsProvider>
+      <WalletProvider>
         <Router>
         <Routes>
           {/* Authentication Routes */}
@@ -101,6 +104,10 @@ function App() {
             <Route index element={<DocumentChamberPage />} />
           </Route>
 
+          <Route path="/payments" element={<DashboardLayout />}>
+            <Route index element={<PaymentsPage />} />
+          </Route>
+
           {/* Chat Routes */}
           <Route path="/chat" element={<DashboardLayout />}>
             <Route index element={<ChatPage />} />
@@ -114,6 +121,7 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         </Router>
+      </WalletProvider>
       </MeetingsProvider>
     </AuthProvider>
   );

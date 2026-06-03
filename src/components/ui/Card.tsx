@@ -3,6 +3,7 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  id?: string;
   onClick?: () => void;
   hoverable?: boolean;
 }
@@ -10,14 +11,16 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({
   children,
   className = '',
+  id,
   onClick,
   hoverable = false,
 }) => {
   const hoverableClass = hoverable ? 'transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer' : '';
   const clickableClass = onClick ? 'cursor-pointer' : '';
-  
+
   return (
-    <div 
+    <div
+      id={id}
       className={`bg-white rounded-lg shadow-md overflow-hidden ${hoverableClass} ${clickableClass} ${className}`}
       onClick={onClick}
     >
