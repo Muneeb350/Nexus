@@ -1,41 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Bell, Calendar, TrendingUp, AlertCircle, PlusCircle } from 'lucide-react';
+import { Users, Bell, Calendar, TrendingUp, AlertCircle, PlusCircle, CalendarDays, Clock } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Avatar } from '../../components/ui/Avatar';
 import { CollaborationRequestCard } from '../../components/collaboration/CollaborationRequestCard';
 import { InvestorCard } from '../../components/investor/InvestorCard';
 import { useAuth } from '../../context/AuthContext';
+import { useMeetings, toDateKey, formatTimeSlot } from '../../context/MeetingsContext';
 import { CollaborationRequest } from '../../types';
 import { getRequestsForEntrepreneur } from '../../data/collaborationRequests';
 import { investors } from '../../data/users';
 
 export const EntrepreneurDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { requests: meetingRequests } = useMeetings();
   const [collaborationRequests, setCollaborationRequests] = useState<CollaborationRequest[]>([]);
   const [recommendedInvestors, setRecommendedInvestors] = useState(investors.slice(0, 3));
-  
+
   useEffect(() => {
     if (user) {
-      // Load collaboration requests
       const requests = getRequestsForEntrepreneur(user.id);
       setCollaborationRequests(requests);
     }
   }, [user]);
-  
+
   const handleRequestStatusUpdate = (requestId: string, status: 'accepted' | 'rejected') => {
-    setCollaborationRequests(prevRequests => 
-      prevRequests.map(req => 
+    setCollaborationRequests(prevRequests =>
+      prevRequests.map(req =>
         req.id === requestId ? { ...req, status } : req
       )
     );
   };
-  
+
   if (!user) return null;
-  
+
   const pendingRequests = collaborationRequests.filter(req => req.status === 'pending');
-  
+
+  const today = toDateKey(new Date());
+  const confirmedMeetings = meetingRequests
+    .filter(r => r.status === 'accepted' && r.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -43,16 +50,14 @@ export const EntrepreneurDashboard: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.name}</h1>
           <p className="text-gray-600">Here's what's happening with your startup today</p>
         </div>
-        
+
         <Link to="/investors">
-          <Button
-            leftIcon={<PlusCircle size={18} />}
-          >
+          <Button leftIcon={<PlusCircle size={18} />}>
             Find Investors
           </Button>
         </Link>
       </div>
-      
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-primary-50 border border-primary-100">
@@ -68,7 +73,7 @@ export const EntrepreneurDashboard: React.FC = () => {
             </div>
           </CardBody>
         </Card>
-        
+
         <Card className="bg-secondary-50 border border-secondary-100">
           <CardBody>
             <div className="flex items-center">
@@ -84,7 +89,7 @@ export const EntrepreneurDashboard: React.FC = () => {
             </div>
           </CardBody>
         </Card>
-        
+
         <Card className="bg-accent-50 border border-accent-100">
           <CardBody>
             <div className="flex items-center">
@@ -93,12 +98,12 @@ export const EntrepreneurDashboard: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-accent-700">Upcoming Meetings</p>
-                <h3 className="text-xl font-semibold text-accent-900">2</h3>
+                <h3 className="text-xl font-semibold text-accent-900">{confirmedMeetings.length}</h3>
               </div>
             </div>
           </CardBody>
         </Card>
-        
+
         <Card className="bg-success-50 border border-success-100">
           <CardBody>
             <div className="flex items-center">
@@ -113,7 +118,7 @@ export const EntrepreneurDashboard: React.FC = () => {
           </CardBody>
         </Card>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Collaboration requests */}
         <div className="lg:col-span-2 space-y-4">
@@ -122,7 +127,7 @@ export const EntrepreneurDashboard: React.FC = () => {
               <h2 className="text-lg font-medium text-gray-900">Collaboration Requests</h2>
               <Badge variant="primary">{pendingRequests.length} pending</Badge>
             </CardHeader>
-            
+
             <CardBody>
               {collaborationRequests.length > 0 ? (
                 <div className="space-y-4">
@@ -140,13 +145,15 @@ export const EntrepreneurDashboard: React.FC = () => {
                     <AlertCircle size={24} className="text-gray-500" />
                   </div>
                   <p className="text-gray-600">No collaboration requests yet</p>
-                  <p className="text-sm text-gray-500 mt-1">When investors are interested in your startup, their requests will appear here</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    When investors are interested in your startup, their requests will appear here
+                  </p>
                 </div>
               )}
             </CardBody>
           </Card>
         </div>
-        
+
         {/* Recommended investors */}
         <div className="space-y-4">
           <Card>
@@ -156,7 +163,7 @@ export const EntrepreneurDashboard: React.FC = () => {
                 View all
               </Link>
             </CardHeader>
-            
+
             <CardBody className="space-y-4">
               {recommendedInvestors.map(investor => (
                 <InvestorCard
@@ -169,6 +176,83 @@ export const EntrepreneurDashboard: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Upcoming Confirmed Meetings */}
+      <Card>
+        <CardHeader className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-medium text-gray-900">Upcoming Confirmed Meetings</h2>
+            {confirmedMeetings.length > 0 && (
+              <Badge variant="success" rounded>{confirmedMeetings.length} confirmed</Badge>
+            )}
+          </div>
+          <Link
+            to="/meetings"
+            className="text-sm font-medium text-primary-600 hover:text-primary-500"
+          >
+            View in Meetings →
+          </Link>
+        </CardHeader>
+
+        <CardBody>
+          {confirmedMeetings.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-50 mb-3">
+                <CalendarDays size={24} className="text-gray-400" />
+              </div>
+              <p className="text-gray-600 font-medium">No upcoming meetings scheduled.</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Accept a meeting request on the{' '}
+                <Link to="/meetings" className="text-primary-600 hover:underline">
+                  Meetings page
+                </Link>{' '}
+                to see it here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {confirmedMeetings.map(meeting => {
+                const displayDate = new Date(`${meeting.date}T00:00:00`).toLocaleDateString(
+                  'en-US',
+                  { weekday: 'short', month: 'short', day: 'numeric' }
+                );
+                return (
+                  <div
+                    key={meeting.id}
+                    className="flex items-center gap-4 p-3 bg-success-50 rounded-lg border border-success-100"
+                  >
+                    <Avatar src={meeting.senderAvatarUrl} alt={meeting.senderName} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {meeting.senderName}
+                        </span>
+                        <Badge
+                          variant={meeting.senderRole === 'investor' ? 'primary' : 'secondary'}
+                          size="sm"
+                          rounded
+                        >
+                          {meeting.senderRole === 'investor' ? 'Investor' : 'Entrepreneur'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <CalendarDays size={11} />
+                          {displayDate}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={11} />
+                          {formatTimeSlot(meeting.timeSlot)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 };
